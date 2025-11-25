@@ -19,7 +19,11 @@ func NewCachedFileServer(root *os.Root) *FileServer {
 }
 
 func (fs *FileServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	path := "/" + filepath.Join(".", filepath.Clean(r.URL.Path))
+	path := r.URL.Path
+	if path == "" || path[0] != '/' {
+		path = "/" + path
+	}
+	path = filepath.Clean(path)
 
 	if filepath.Base(path) == "index.html" {
 		http.Redirect(w, r, filepath.Dir(path), http.StatusSeeOther)
@@ -34,7 +38,7 @@ func (fs *FileServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if info.IsDir() {
-		if strings.HasSuffix(r.URL.Path, "/") {
+		if r.URL.Path != "/" && strings.HasSuffix(r.URL.Path, "/") {
 			http.Redirect(w, r, strings.TrimSuffix(r.URL.Path, "/"), http.StatusSeeOther)
 			return
 		}

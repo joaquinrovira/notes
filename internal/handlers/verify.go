@@ -3,6 +3,7 @@ package handlers
 import (
 	"log"
 	"net/http"
+	"path/filepath"
 
 	"github.com/joaquinrovira/notes/internal/services/auth"
 	"github.com/joaquinrovira/notes/internal/services/token"
@@ -54,5 +55,6 @@ func (h *VerifyHandler) serveHTTPTokenV1(w http.ResponseWriter, r *http.Request,
 	http.SetCookie(w, cookie)
 
 	// Final Redirect
-	http.Redirect(w, r, token.Index, http.StatusSeeOther)
+	location := filepath.Join("/", token.Index)
+	http.Redirect(w, r, location, http.StatusSeeOther)
 }

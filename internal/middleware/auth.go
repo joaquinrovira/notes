@@ -1,6 +1,7 @@
 package middleware
 
 import (
+	_ "embed"
 	"net/http"
 	"strings"
 	"time"
@@ -9,20 +10,19 @@ import (
 	"github.com/joaquinrovira/notes/internal/services/token"
 )
 
+//go:embed 403.html
+var ForbiddenPage string
+
 func Auth(TokenService *token.Service) Middleware {
+	data := []byte(ForbiddenPage)
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			payload, ok := auth.Extract(TokenService, r)
-			if !ok {
+			if !ok || !allowed(payload, r.URL.Path) {
 				w.WriteHeader(http.StatusForbidden)
+				w.Write(data)
 				return
 			}
-
-			if !allowed(payload, r.URL.Path) {
-				w.WriteHeader(http.StatusLocked)
-				return
-			}
-
 			next.ServeHTTP(w, r)
 		})
 	}

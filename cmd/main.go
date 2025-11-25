@@ -15,11 +15,11 @@ func main() {
 
 	token := token.NewTokenV1()
 	token.Paths = []string{""}
-	token.Index = "/auth/generate"
+	token.Index = "/auth/token"
 	payload, err := TokenService.Encrypt(token)
 	if err != nil {
 		panic(err)
 	}
 
-	fmt.Printf("/auth/verify?token=%s\n", payload)
+	fmt.Printf("/auth/login?token=%s\n", payload)
 }

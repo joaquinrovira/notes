@@ -56,7 +56,7 @@ func main() {
 
 	// Auth Handlers
 	verifyHandler := &handlers.VerifyHandler{TokenService: TokenService}
-	mux.Handle("/auth/verify", mdw.Apply(verifyHandler, middlewares...))
+	mux.Handle("/auth/login", mdw.Apply(verifyHandler, middlewares...))
 
 	middlewares = append(
 		middlewares,
@@ -71,8 +71,8 @@ func main() {
 		middlewares,
 		middleware.BasicAuth("local", map[string]string{username: password}),
 	)
-	mux.Handle("GET /auth/generate", mdw.Apply(handlers.GetAdmin(), adminMdw...))
-	mux.Handle("POST /auth/generate", mdw.Apply(handlers.PostAdmin(TokenService), adminMdw...))
+	mux.Handle("GET /auth/token", mdw.Apply(handlers.GetAdmin(), adminMdw...))
+	mux.Handle("POST /auth/token", mdw.Apply(handlers.PostAdmin(TokenService), adminMdw...))
 
 	mux.Handle("GET /countdown", mdw.Apply(handlers.Countdown(TokenService), middlewares...))
 
@@ -85,7 +85,7 @@ func main() {
 
 	// 4. Start Server
 	log.Printf("Starting SecureFileServe on :%s", port)
-	log.Printf("Admin Interface: http://localhost:%s/auth/generate", port)
+	log.Printf("Admin Interface: http://localhost:%s/auth/token", port)
 	if err := http.ListenAndServe(":"+port, mux); err != nil {
 		log.Fatal(err)
 	}

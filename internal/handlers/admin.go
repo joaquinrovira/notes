@@ -7,13 +7,21 @@ import (
 	"net/http"
 	"path/filepath"
 	"strings"
+	"text/template"
 	"time"
 
 	"github.com/joaquinrovira/notes/internal/services/token"
 )
 
-//go:embed admin.html
+//go:embed admin.get.html
 var GetAdminPage string
+
+//go:embed admin.post.html.tmpl
+var PostAdminPage string
+
+type PostAdminData struct {
+	Link string
+}
 
 func GetAdmin() http.HandlerFunc {
 	data := []byte(GetAdminPage)
@@ -24,6 +32,10 @@ func GetAdmin() http.HandlerFunc {
 }
 
 func PostAdmin(TokenService *token.Service) http.HandlerFunc {
+	tmpl, err := template.New("token-gen").Parse(PostAdminPage)
+	if err != nil {
+		panic(err)
+	}
 	return func(w http.ResponseWriter, r *http.Request) {
 		r.ParseForm()
 		indexRaw := r.FormValue("index")
@@ -78,22 +90,13 @@ func PostAdmin(TokenService *token.Service) http.HandlerFunc {
 			return
 		}
 
-		fullLink := fmt.Sprintf("/auth/verify?token=%s", tokenStr)
-
-		html := fmt.Sprintf(`
-<!DOCTYPE html>
-<html>
-<body>
-	<h1>Link Generated</h1>
-	<p>Share this link:</p>
-	<textarea style="width:100%%; height: 100px;">%s</textarea>
-	<br><br>
-	<a href="/auth/generate">Generate Another</a>
-</body>
-</html>
-	`, fullLink)
+		fullLink := fmt.Sprintf("/auth/login?token=%s", tokenStr)
 
 		w.Header().Set("Content-Type", "text/html")
-		w.Write([]byte(html))
+		w.WriteHeader(http.StatusOK)
+		err = tmpl.Execute(w, PostAdminData{Link: fullLink})
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+		}
 	}
 }
