@@ -3,19 +3,97 @@
 
 <head>
     <title>Admin - Generate Link</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        body {
+            --color-gray-300: oklch(87.2% .01 258.338);
+            --color-gray-400: oklch(70.7% .022 261.325);
+            --color-gray-500: oklch(55.1% .027 264.364);
+            --color-gray-600: oklch(44.6% .03 256.802);
+            --color-gray-800: oklch(27.8% .033 256.848);
+            --color-gray-900: oklch(21% .034 264.665);
+            --light-text: var(--color-gray-300);
+            --dim-text: var(--color-gray-400);
+
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--color-gray-900);
+            color: var(--dim-text);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            padding: 0;
+            margin: 0;
+        }
+
+        form {
+            display: flex;
+            flex-direction: column;
+            background-color: var(--color-gray-800);
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
+        }
+
+        label {
+            font-weight: bold;
+        }
+
+        input {
+            background-color: var(--color-gray-500);
+            color: var(--light-text);
+        }
+
+        input[type="text"],
+        input[type="datetime-local"] {
+            padding: 0.5rem;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+
+        label+input {
+            margin-top: 0.6rem;
+            margin-bottom: 1.2rem;
+        }
+
+        .reminder {
+            font-weight: normal;
+            font-size: 0.8rem;
+            color: #94a3b8;
+            margin-left: 5px;
+        }
+
+        button {
+            padding: 10px 15px;
+            background-color: #615fff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background-color: #4b47c9;
+        }
+    </style>
 </head>
 
-<body style="font-family: sans-serif; padding: 20px;">
+<body>
     <h1>Generate Magic Link</h1>
     <form method="POST">
-        <label>Allowed Paths (Glob patterns, comma separated):</label><br>
-        <input type="text" name="paths" placeholder="/some/path/*" style="width: 300px;"><br><br>
+        <label>Home Site:</label>
+        <input type="text" name="index" placeholder="/some/post">
 
-        <label>Not Before (optional):</label><br>
-        <input type="datetime-local" name="nbf"><br><br>
+        <label>Allowed Paths:<span class="reminder">(Glob patterns, comma separated)</span></label>
+        <input type="text" name="paths" placeholder="/some/path/*">
 
-        <label>Expires (optional):</label><br>
-        <input type="datetime-local" name="exp"><br><br>
+        <label>Not Before:<span class="reminder">(optional)</span></label>
+        <input type="datetime-local" name="nbf">
+
+        <label>Expires:<span class="reminder">(optional)</span></label>
+        <input type="datetime-local" name="exp">
 
         <button type="submit">Generate Link</button>
     </form>

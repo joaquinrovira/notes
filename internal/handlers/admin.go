@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"path/filepath"
 	"strings"
 	"time"
 
@@ -25,6 +26,7 @@ func GetAdmin() http.HandlerFunc {
 func PostAdmin(TokenService *token.Service) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		r.ParseForm()
+		indexRaw := r.FormValue("index")
 		pathsRaw := r.FormValue("paths")
 		nbfRaw := r.FormValue("nbf")
 		expRaw := r.FormValue("exp")
@@ -58,11 +60,17 @@ func PostAdmin(TokenService *token.Service) http.HandlerFunc {
 			exp = &t
 		}
 
+		indexRaw = strings.TrimSpace(indexRaw)
+		if indexRaw == "" {
+			http.Error(w, "Index path is required", http.StatusBadRequest)
+			return
+		}
+
 		payload := token.NewTokenV1()
 		payload.NotBefore = nbf
 		payload.Expiration = exp
 		payload.Paths = paths
-		payload.Index = "/test"
+		payload.Index = filepath.Clean(indexRaw)
 
 		tokenStr, err := TokenService.Encrypt(payload)
 		if err != nil {
