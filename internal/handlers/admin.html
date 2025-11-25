@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Admin - Generate Link</title>
+</head>
+
+<body style="font-family: sans-serif; padding: 20px;">
+    <h1>Generate Magic Link</h1>
+    <form method="POST">
+        <label>Allowed Paths (Glob patterns, comma separated):</label><br>
+        <input type="text" name="paths" placeholder="/some/path/*" style="width: 300px;"><br><br>
+
+        <label>Not Before (optional):</label><br>
+        <input type="datetime-local" name="nbf"><br><br>
+
+        <label>Expires (optional):</label><br>
+        <input type="datetime-local" name="exp"><br><br>
+
+        <button type="submit">Generate Link</button>
+    </form>
+</body>
+
+</html>

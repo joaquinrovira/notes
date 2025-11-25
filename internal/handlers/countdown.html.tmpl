@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Coming Soon</title>
+    <style>
+        body {
+            font-size: 2rem;
+            font-family: monospace;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background: #1a1a1a;
+            color: #0f0;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>Accessible In:</h1>
+    <h2 id="timer">Loading...</h2>
+
+    <script>
+        const until = {{ .UnixSeconds }};
+
+        function update() {
+            const now = Math.floor(Date.now() / 1000);
+            const diff = until - now;
+
+            if (diff <= 0) {
+                window.location.href = "{{ .Location }}";
+                return;
+            }
+
+            const hours = Math.floor(diff / 3600);
+            const minutes = Math.floor((diff % 3600) / 60);
+            const seconds = diff % 60;
+
+            const opts = { minimumIntegerDigits: 2 }
+            const fmt = (n) => n.toLocaleString("en-US", opts)
+            const time = `${fmt(hours)}:${fmt(minutes)}:${fmt(seconds)}`
+
+            document.getElementById('timer').innerText = time;
+        }
+
+        setInterval(update, 1000);
+        update();
+    </script>
+</body>
+
+</html>
