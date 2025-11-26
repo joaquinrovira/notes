@@ -76,8 +76,8 @@ func main() {
 
 	middlewares = append(
 		middlewares,
-		mdw.Countdown(TokenService),
 		mdw.Auth(TokenService),
+		mdw.Countdown(TokenService),
 	)
 	mux.Handle("/", mdw.Apply(cache.NewCachedFileServer(root), middlewares...))
 
