@@ -3,30 +3,431 @@
 
 <head>
     <meta charset="UTF-8">
-    <title>Coming Soon</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Golden Serenity | Luxury Spa Invitation</title>
+    <!-- Importing elegant fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=Montserrat:wght@300;400;600&family=Playfair+Display:ital,wght@0,400;0,700;1,400&display=swap"
+        rel="stylesheet">
+
     <style>
+        /* --- CSS VARIABLES & RESET --- */
+        :root {
+            --bg-dark: #0f1012;
+            --bg-card: #16181b;
+            --gold-primary: #d4af37;
+            --gold-light: #f3e5ab;
+            --gold-dark: #aa8c2c;
+            --text-main: #e0e0e0;
+            --text-muted: #8c8c8c;
+            --font-heading: 'Playfair Display', serif;
+            --font-subheading: 'Cinzel', serif;
+            --font-body: 'Montserrat', sans-serif;
+            --transition-speed: 0.5s;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
         body {
-            font-size: 2rem;
-            font-family: monospace;
+            background-color: var(--bg-dark);
+            background-image:
+                radial-gradient(circle at 50% 0%, rgba(212, 175, 55, 0.05) 0%, transparent 60%),
+                linear-gradient(to bottom, #0f1012 0%, #080808 100%);
+            color: var(--text-main);
+            font-family: var(--font-body);
+            height: 100vh;
+            width: 100vw;
+            overflow: hidden;
+            /* Prevent scrolling for the SPA feel */
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* --- UTILITIES --- */
+        .text-gold {
+            color: var(--gold-primary);
+            background: linear-gradient(to right, var(--gold-dark), var(--gold-primary), var(--gold-light), var(--gold-primary), var(--gold-dark));
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            background-size: 200% auto;
+            animation: shine 5s linear infinite;
+        }
+
+        @keyframes shine {
+            to {
+                background-position: 200% center;
+            }
+        }
+
+        .hidden {
+            display: none !important;
+            opacity: 0;
+        }
+
+        .fade-in {
+            animation: fadeIn 0.8s ease-out forwards;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* --- BUTTONS --- */
+        .btn-toggle {
+            position: fixed;
+            bottom: 30px;
+            padding: 12px 30px;
+            background: transparent;
+            border: 1px solid var(--gold-dark);
+            color: var(--gold-primary);
+            font-family: var(--font-subheading);
+            font-size: 0.8rem;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            z-index: 100;
+        }
+
+        .btn-toggle:hover {
+            background: rgba(212, 175, 55, 0.1);
+            box-shadow: 0 0 15px rgba(212, 175, 55, 0.2);
+            border-color: var(--gold-light);
+            color: var(--gold-light);
+        }
+
+        /* --- PAGE 1: COUNTDOWN --- */
+        #page-countdown {
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            height: 100%;
+        }
+
+        .countdown-title {
+            font-family: var(--font-subheading);
+            font-size: 1.2rem;
+            letter-spacing: 0.3em;
+            text-transform: uppercase;
+            color: var(--text-muted);
+            margin-bottom: 2rem;
+            border-bottom: 1px solid var(--gold-dark);
+            padding-bottom: 10px;
+            display: inline-block;
+        }
+
+        .timer-container {
+            display: flex;
+            gap: 2rem;
+            font-family: var(--font-heading);
+        }
+
+        .time-block {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-width: 5em;
+        }
+
+        .time-number {
+            font-size: 5rem;
+            line-height: 1;
+            font-weight: 400;
+            color: var(--gold-primary);
+            text-shadow: 0 0 20px rgba(212, 175, 55, 0.15);
+        }
+
+        .time-label {
+            font-family: var(--font-body);
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 0.2em;
+            color: var(--text-muted);
+            margin-top: 1rem;
+        }
+
+        .separator {
+            font-size: 4rem;
+            color: var(--gold-dark);
+            opacity: 0.5;
+            margin-top: -10px;
+        }
+
+        .countdown-footer {
+            margin-top: 4rem;
+            font-family: var(--font-heading);
+            font-style: italic;
+            color: var(--text-muted);
+            font-size: 1.1rem;
+        }
+
+        /* --- PAGE 2: TICKET --- */
+        #page-ticket {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .ticket-wrapper {
+            background: var(--bg-card);
+            width: 100%;
+            max-width: 850px;
+            display: flex;
+            border: 1px solid var(--gold-dark);
+            position: relative;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+            background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23d4af37' fill-opacity='0.03'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+        }
+
+        /* Gold Border Effect (Inner) */
+        .ticket-wrapper::before {
+            content: '';
+            position: absolute;
+            top: 5px;
+            left: 5px;
+            right: 5px;
+            bottom: 5px;
+            border: 1px solid rgba(212, 175, 55, 0.3);
+            pointer-events: none;
+        }
+
+        /* Perforation circles */
+        .ticket-wrapper::after,
+        .ticket-left::after {
+            content: '';
+            position: absolute;
+            height: 30px;
+            width: 30px;
+            background-color: var(--bg-dark);
+            /* Matches body bg to look like a hole */
+            border-radius: 50%;
+            top: 50%;
+            transform: translateY(-50%);
+            border: 1px solid var(--gold-dark);
+            z-index: 10;
+        }
+
+        /* Right semi-circle hole on main wrapper */
+        .ticket-wrapper::after {
+            right: -16px;
+        }
+
+        /* Left semi-circle hole on left section */
+        .ticket-left::after {
+            left: -16px;
+            border: 1px solid var(--gold-dark);
+        }
+
+        .ticket-left {
+            flex: 2;
+            padding: 3rem;
+            border-right: 2px dashed rgba(212, 175, 55, 0.3);
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .ticket-right {
+            flex: 1;
+            padding: 2rem;
             display: flex;
             flex-direction: column;
             justify-content: center;
             align-items: center;
-            height: 100vh;
-            background: #1a1a1a;
-            color: #0f0;
+            text-align: center;
+            background: rgba(0, 0, 0, 0.2);
+            position: relative;
+        }
+
+        .brand-name {
+            font-family: var(--font-subheading);
+            color: var(--gold-primary);
+            letter-spacing: 4px;
+            font-size: 0.9rem;
+            margin-bottom: 1rem;
+            display: block;
+        }
+
+        .ticket-title {
+            font-family: var(--font-heading);
+            font-size: 3rem;
+            color: var(--text-main);
+            margin-bottom: 0.5rem;
+            line-height: 1.1;
+        }
+
+        .ticket-subtitle {
+            font-family: var(--font-body);
+            font-weight: 300;
+            color: var(--text-muted);
+            letter-spacing: 1px;
+            margin-bottom: 2rem;
+            font-size: 0.9rem;
+        }
+
+        .ticket-details {
+            display: flex;
+            gap: 2rem;
+            margin-top: 1rem;
+        }
+
+        .detail-item h4 {
+            font-family: var(--font-subheading);
+            color: var(--gold-dark);
+            font-size: 0.7rem;
+            letter-spacing: 1px;
+            margin-bottom: 5px;
+        }
+
+        .detail-item p {
+            font-family: var(--font-body);
+            font-size: 0.9rem;
+            color: var(--text-main);
+        }
+
+        .ticket-code {
+            font-family: 'Montserrat', sans-serif;
+            font-weight: 600;
+            letter-spacing: 3px;
+            color: var(--gold-primary);
+            writing-mode: vertical-rl;
+            text-orientation: mixed;
+            position: absolute;
+            right: 15px;
+            top: 50%;
+            transform: translateY(-50%) rotate(180deg);
+            font-size: 0.7rem;
+            opacity: 0.6;
+        }
+
+        .qr-placeholder {
+            width: 100px;
+            height: 100px;
+            background: var(--gold-light);
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--bg-dark);
+            font-family: var(--font-subheading);
+            font-size: 0.8rem;
+            border: 4px solid #fff;
+        }
+
+        .admit-one {
+            font-family: var(--font-subheading);
+            font-size: 0.8rem;
+            color: var(--gold-primary);
+            letter-spacing: 2px;
+            border-top: 1px solid var(--gold-dark);
+            border-bottom: 1px solid var(--gold-dark);
+            padding: 5px 0;
+            margin-top: 10px;
+        }
+
+        /* --- MEDIA QUERIES --- */
+        @media (max-width: 768px) {
+            .ticket-wrapper {
+                flex-direction: column;
+                max-width: 90%;
+            }
+
+            .ticket-left {
+                border-right: none;
+                border-bottom: 2px dashed rgba(212, 175, 55, 0.3);
+                padding: 2rem;
+            }
+
+            .ticket-left::after {
+                display: none;
+                /* Hide side notch on mobile for simplicity */
+            }
+
+            .timer-container {
+                gap: 1rem;
+            }
+
+            .time-number {
+                font-size: 3rem;
+            }
+
+            .separator {
+                font-size: 2.5rem;
+            }
+
+            .ticket-title {
+                font-size: 2rem;
+            }
+
+            .ticket-code {
+                display: none;
+            }
         }
     </style>
 </head>
 
 <body>
-    <h1 id="timer">Loading...</h2>
+
+    <section id="page-countdown" class="fade-in">
+        <span class="countdown-title">Soon</span>
+        <div class="time-block" style="margin-bottom: 2em;display:none;">
+            <span class="time-number" id="days">00</span>
+            <span class="time-label">Days</span>
+        </div>
+
+        <div class="timer-container">
+            <div class="time-block">
+                <span class="time-number" id="hours">04</span>
+                <span class="time-label">Hours</span>
+            </div>
+            <div class="separator">:</div>
+            <div class="time-block">
+                <span class="time-number" id="minutes">12</span>
+                <span class="time-label">Minutes</span>
+            </div>
+            <div class="separator">:</div>
+            <div class="time-block">
+                <span class="time-number" id="seconds">45</span>
+                <span class="time-label">Seconds</span>
+            </div>
+        </div>
+
+        <div class="countdown-footer">
+            Your reservation is confirmed.
+        </div>
+    </section>
 
     <script>
-        const until = parseInt("{{ .UnixSeconds }}", 10) || 1800000000;
+        const until = parseInt("{{ .UnixSeconds }}", 10) || 1765000000;
 
-
-        let daysNode;
+        const h = document.getElementById('hours');
+        const m = document.getElementById('minutes');
+        const s = document.getElementById('seconds');
+        const d = document.getElementById('days');
         function update() {
             const now = Math.floor(Date.now() / 1000);
             const diff = until - now;
@@ -44,16 +445,15 @@
             const opts = { minimumIntegerDigits: 2 }
             const fmt = (n) => n.toLocaleString("en-US", opts)
 
-            const node = document.getElementById('timer')
+            h.innerText = fmt(hours);
+            m.innerText = fmt(minutes);
+            s.innerText = fmt(seconds);
 
-            const time = `${fmt(hours)}:${fmt(minutes)}:${fmt(seconds)}`
-            node.innerText = time;
-            
             if (days > 0) {
-                if (!daysNode) {
-                    daysNode = node.parentNode.insertBefore(document.createElement("h2"), node);
-                }
-                daysNode.innerText = `${fmt(days)} days`;
+                d.parentNode.style.display = 'flex';
+                d.innerText = days;
+            } else {
+                d.parentNode.style.display = 'none';
             }
 
 

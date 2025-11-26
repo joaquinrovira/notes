@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Coming Soon</title>
+    <style>
+        body {
+            font-size: 2rem;
+            font-family: monospace;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background: #1a1a1a;
+            color: #0f0;
+        }
+    </style>
+</head>
+
+<body>
+    <h1 id="timer">Loading...</h2>
+
+    <script>
+        const until = parseInt("{{ .UnixSeconds }}", 10) || 1800000000;
+        let daysNode;
+        function update() {
+            const now = Math.floor(Date.now() / 1000);
+            const diff = until - now;
+
+            if (diff <= 0) {
+                window.location.href = "{{ .Location }}";
+                return;
+            }
+
+            const days = Math.floor(diff / (3600 * 24));
+            const hours = Math.floor(diff / 3600) % 24;
+            const minutes = Math.floor((diff % 3600) / 60);
+            const seconds = diff % 60;
+
+            const opts = { minimumIntegerDigits: 2 }
+            const fmt = (n) => n.toLocaleString("en-US", opts)
+
+            const node = document.getElementById('timer')
+
+            const time = `${fmt(hours)}:${fmt(minutes)}:${fmt(seconds)}`
+            node.innerText = time;
+            
+            if (days > 0) {
+                if (!daysNode) {
+                    daysNode = node.parentNode.insertBefore(document.createElement("h2"), node);
+                }
+                daysNode.innerText = `${fmt(days)} days`;
+            }
+
+
+        }
+
+        setInterval(update, 1000);
+        update();
+    </script>
+</body>
+
+</html>
