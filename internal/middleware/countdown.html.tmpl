@@ -20,12 +20,13 @@
 </head>
 
 <body>
-    <h1>Accessible In:</h1>
-    <h2 id="timer">Loading...</h2>
+    <h1 id="timer">Loading...</h2>
 
     <script>
-        const until = {{ .UnixSeconds }};
+        const until = parseInt("{{ .UnixSeconds }}", 10) || 1800000000;
 
+
+        let daysNode;
         function update() {
             const now = Math.floor(Date.now() / 1000);
             const diff = until - now;
@@ -35,15 +36,27 @@
                 return;
             }
 
-            const hours = Math.floor(diff / 3600);
+            const days = Math.floor(diff / (3600 * 24));
+            const hours = Math.floor(diff / 3600) % 24;
             const minutes = Math.floor((diff % 3600) / 60);
             const seconds = diff % 60;
 
             const opts = { minimumIntegerDigits: 2 }
             const fmt = (n) => n.toLocaleString("en-US", opts)
-            const time = `${fmt(hours)}:${fmt(minutes)}:${fmt(seconds)}`
 
-            document.getElementById('timer').innerText = time;
+            const node = document.getElementById('timer')
+
+            const time = `${fmt(hours)}:${fmt(minutes)}:${fmt(seconds)}`
+            node.innerText = time;
+            
+            if (days > 0) {
+                if (!daysNode) {
+                    daysNode = node.parentNode.insertBefore(document.createElement("h2"), node);
+                }
+                daysNode.innerText = `${fmt(days)} days`;
+            }
+
+
         }
 
         setInterval(update, 1000);

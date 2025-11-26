@@ -74,8 +74,6 @@ func main() {
 	mux.Handle("GET /auth/token", mdw.Apply(handlers.GetAdmin(), adminMdw...))
 	mux.Handle("POST /auth/token", mdw.Apply(handlers.PostAdmin(TokenService), adminMdw...))
 
-	mux.Handle("GET /countdown", mdw.Apply(handlers.Countdown(TokenService), middlewares...))
-
 	middlewares = append(
 		middlewares,
 		mdw.Countdown(TokenService),
