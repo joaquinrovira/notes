@@ -2,6 +2,8 @@ package middleware
 
 import (
 	_ "embed"
+	"encoding/json"
+	"log"
 	"net/http"
 	"strings"
 	"time"
@@ -19,12 +21,16 @@ func Auth(TokenService *token.Service) Middleware {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			payload, ok := auth.Extract(TokenService, r)
 			if !ok {
+				log.Println("missing auth payload")
 				w.WriteHeader(http.StatusForbidden)
 				w.Write(data)
 				return
 			}
 
+			p, _ := json.Marshal(payload)
+			log.Println(string(p))
 			if !allowed(payload, r.URL.Path) {
+				log.Println("not allowed:", r.URL.Path)
 				switch payload := payload.(type) {
 				case *token.TokenV1:
 					http.Redirect(w, r, payload.Index, http.StatusSeeOther)
