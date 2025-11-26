@@ -18,11 +18,23 @@ func Auth(TokenService *token.Service) Middleware {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			payload, ok := auth.Extract(TokenService, r)
-			if !ok || !allowed(payload, r.URL.Path) {
+			if !ok {
 				w.WriteHeader(http.StatusForbidden)
 				w.Write(data)
 				return
 			}
+
+			if !allowed(payload, r.URL.Path) {
+				switch payload := payload.(type) {
+				case *token.TokenV1:
+					http.Redirect(w, r, payload.Index, http.StatusSeeOther)
+				default:
+					w.WriteHeader(http.StatusForbidden)
+					w.Write(data)
+					return
+				}
+			}
+
 			next.ServeHTTP(w, r)
 		})
 	}
