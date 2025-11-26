@@ -2,6 +2,8 @@ package middleware
 
 import (
 	_ "embed"
+	"encoding/json"
+	"log"
 	"net/http"
 	"text/template"
 	"time"
@@ -23,6 +25,9 @@ func Countdown(TokenService *token.Service) Middleware {
 				next()
 				return
 			}
+
+			p, _ := json.Marshal(payload)
+			log.Println(string(p))
 
 			switch token := payload.(type) {
 			case *token.TokenV1:

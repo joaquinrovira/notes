@@ -2,7 +2,6 @@ package middleware
 
 import (
 	_ "embed"
-	"encoding/json"
 	"log"
 	"net/http"
 	"strings"
@@ -27,8 +26,6 @@ func Auth(TokenService *token.Service) Middleware {
 				return
 			}
 
-			p, _ := json.Marshal(payload)
-			log.Println(string(p))
 			if !allowed(payload, r.URL.Path) {
 				log.Println("not allowed:", r.URL.Path)
 				switch payload := payload.(type) {
