@@ -4,7 +4,7 @@ import (
 	_ "embed"
 	"fmt"
 	"io"
-	"log"
+	"log/slog"
 	"net/http"
 	"os"
 	"path"
@@ -12,12 +12,12 @@ import (
 	"time"
 
 	"github.com/joaquinrovira/notes/internal/auth/token"
-	"github.com/joaquinrovira/notes/internal/content"
-	"github.com/joaquinrovira/notes/internal/middleware"
+	"github.com/joaquinrovira/notes/internal/httputil"
+	"github.com/joaquinrovira/notes/internal/store"
 )
 
-func New(t *token.Cypher, fs content.Filesystem) middleware.Middleware {
-	countdown := countdown(t, fs)
+func New(log *slog.Logger, t *token.Cypher, fs store.Filesystem) httputil.Middleware {
+	countdown := Handler(log, t, fs)
 	return func(next http.Handler) http.Handler {
 		return token.WithToken(t, func(w http.ResponseWriter, r *http.Request, t token.Token) {
 			switch token := t.(type) {
@@ -35,7 +35,7 @@ func New(t *token.Cypher, fs content.Filesystem) middleware.Middleware {
 //go:embed countdown.html.tmpl
 var CountdownPage string
 
-func countdown(t *token.Cypher, fs content.Filesystem) http.HandlerFunc {
+func Handler(log *slog.Logger, t *token.Cypher, fs store.Filesystem) http.HandlerFunc {
 	tmpl, err := template.New("countdown").Parse(CountdownPage)
 	if err != nil {
 		panic(err)
@@ -51,7 +51,7 @@ func countdown(t *token.Cypher, fs content.Filesystem) http.HandlerFunc {
 		case *token.TokenV1:
 			h, err := customCountdown(token, fs)
 			if err != nil {
-				log.Print(err)
+				log.Error("custom countdown failure", slog.String("err", err.Error()))
 				countdownToken(*token, tmpl, w)
 				return
 			}
@@ -76,11 +76,11 @@ func countdownToken(token token.TokenV1, tmpl *template.Template, w http.Respons
 	}
 	err := tmpl.Execute(w, CountdownData{Location: token.Home, UnixSeconds: countdown})
 	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
+		panic(err)
 	}
 }
 
-func customCountdown(token *token.TokenV1, fs content.Filesystem) (h http.Handler, err error) {
+func customCountdown(token *token.TokenV1, fs store.Filesystem) (h http.Handler, err error) {
 	location := path.Join(".", token.Home)
 	if location == "" {
 		return nil, fmt.Errorf("undefined home parameter")
@@ -130,7 +130,7 @@ func customCountdown(token *token.TokenV1, fs content.Filesystem) (h http.Handle
 		}
 		err := tmpl.Execute(w, CountdownData{Location: token.Home, UnixSeconds: countdown})
 		if err != nil {
-			w.WriteHeader(http.StatusInternalServerError)
+			panic(err)
 		}
 	}), nil
 }

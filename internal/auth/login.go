@@ -26,7 +26,7 @@ func Login(log *slog.Logger, t *token.Cypher, secure bool) http.Handler {
 		// Decrypt Payload
 		payload, err := t.Decrypt(raw)
 		if err != nil {
-			log.Debug("token verification failed", slog.String("Err", err.Error()))
+			log.Debug("token verification failed", slog.String("err", err.Error()))
 			Invalid.ServeHTTP(w, r)
 			return
 		}
@@ -59,7 +59,7 @@ func serveHTTPTokenV1(
 
 	payload, err := t.Encrypt(&next)
 	if err != nil {
-		log.Error("failed to encrypt token", slog.String("Err", err.Error()))
+		log.Error("failed to encrypt token", slog.String("err", err.Error()))
 		return httputil.Status(http.StatusInternalServerError, "")
 	}
 

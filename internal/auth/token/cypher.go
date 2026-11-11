@@ -16,8 +16,8 @@ type Cypher struct {
 	cypher cipher.AEAD
 }
 
-// New creates a token service with a 32-byte key
-func New(key string) (*Cypher, error) {
+// NewCypher creates a token service with a 32-byte key
+func NewCypher(key string) (*Cypher, error) {
 	if len(key) != 32 {
 		return nil, errors.New("encryption key must be exactly 32 bytes")
 	}

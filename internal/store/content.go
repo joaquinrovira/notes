@@ -1,4 +1,4 @@
-package content
+package store
 
 import (
 	"context"
@@ -7,11 +7,14 @@ import (
 	"log/slog"
 	"os"
 	"path"
+	"path/filepath"
+	"sync"
 
 	"github.com/go-git/go-billy/v5"
 	"github.com/joaquinrovira/notes/internal/config"
-	"github.com/joaquinrovira/notes/internal/content/filesystem"
-	"github.com/joaquinrovira/notes/internal/content/git"
+	_ "github.com/joaquinrovira/notes/internal/store/builtin"
+	"github.com/joaquinrovira/notes/internal/store/filesystem"
+	"github.com/joaquinrovira/notes/internal/store/git"
 )
 
 type Content interface {
@@ -24,42 +27,48 @@ type Filesystem interface {
 	Stat(filename string) (os.FileInfo, error)
 }
 
-func FromGit(ctx context.Context, log *slog.Logger) (Content, error) {
+func FromGit(ctx context.Context, log *slog.Logger, cfg config.Config, wg *sync.WaitGroup) (Content, error) {
 	var acc []error
-	url, err := config.Require("GIT_URL")
+	url, err := config.Require(cfg, "GIT_URL")
 	acc = append(acc, err)
-	user := config.OrDefault("GIT_USER", "git")
-	token, err := config.Require("GIT_TOKEN")
-	acc = append(acc, err)
+	user := config.OrDefault(cfg, "GIT_USER", "git")
+	token, _ := cfg.String("GIT_TOKEN")
+	// acc = append(acc, err)
 	if err := errors.Join(acc...); err != nil {
 		return nil, err
 	}
 
-	fs, err := git.New(ctx, log, url, user, token)
+	fs, err := git.New(ctx, log, wg, url, git.WithBasicAuth(user, token))
 	if err != nil {
 		return nil, fmt.Errorf("git content: %w", err)
 	}
 
-	return content(
+	return NewContent(
 		prefixed("data", fs),
 		prefixed("static", fs),
 	), nil
 }
 
-func FromFS() (Content, error) {
+func FromFS(cfg config.Config) (Content, error) {
 	var acc []error
-	data, err := filesystem.New("data")
+
+	dir := "."
+	if path, ok := cfg.String("STORE_FS_PATH"); ok {
+		dir = path
+	}
+
+	data, err := filesystem.New(filepath.Join(dir, "data"))
 	acc = append(acc, decorate(err, func(err error) error {
 		return fmt.Errorf("creating data fs store: %w", err)
 	}))
-	static, err := filesystem.New("static")
+	static, err := filesystem.New(filepath.Join(dir, "static"))
 	acc = append(acc, decorate(err, func(err error) error {
 		return fmt.Errorf("creating static fs store: %w", err)
 	}))
 	if err := errors.Join(acc...); err != nil {
 		return nil, err
 	}
-	return content(data, static), nil
+	return NewContent(data, static), nil
 }
 
 func decorate(err error, fn func(error) error) error {
@@ -69,7 +78,7 @@ func decorate(err error, fn func(error) error) error {
 	return fn(err)
 }
 
-func content(data, static Filesystem) Content {
+func NewContent(data, static Filesystem) Content {
 	return contentfn{data: data, static: static}
 }
 

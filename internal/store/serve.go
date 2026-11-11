@@ -1,14 +1,14 @@
-package content
+package store
 
 import (
-	"log"
+	"log/slog"
 	"net/http"
 	"os"
 	"path/filepath"
 	"strings"
 )
 
-func Handler(fs Filesystem) http.Handler {
+func Handler(log *slog.Logger, fs Filesystem) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		path := r.URL.Path
 		if path == "" || path[0] != '/' {
@@ -21,17 +21,27 @@ func Handler(fs Filesystem) http.Handler {
 			return
 		}
 
-		// Check if directory, if so, look for index.html
 		path = filepath.Join(".", path)
+
+		// Check if adding ".html" to the file finds it
+		func() {
+			alt := path + ".html"
+			_, err := fs.Stat(alt)
+			if err == nil {
+				path = alt
+			}
+		}()
+
+		// Check if directory, if so, look for index.html
 		info, err := fs.Stat(path)
 		if err != nil {
 			http.NotFound(w, r)
 			return
 		}
 		if info.IsDir() {
-			// Remove trailing slashes from paths.
-			if r.URL.Path != "/" && strings.HasSuffix(r.URL.Path, "/") {
-				http.Redirect(w, r, strings.TrimSuffix(r.URL.Path, "/"), http.StatusSeeOther)
+			// Add trailing slashes to paths.
+			if !strings.HasSuffix(r.URL.Path, "/") {
+				http.Redirect(w, r, r.URL.Path+"/", http.StatusSeeOther)
 				return
 			}
 			// Directories open index.html by default.
@@ -39,16 +49,17 @@ func Handler(fs Filesystem) http.Handler {
 		}
 
 		file, err := fs.OpenFile(path, os.O_RDONLY, os.ModePerm)
+		if os.IsNotExist(err) {
+			http.NotFound(w, r)
+			return
+		}
 		if err != nil {
-			if os.IsNotExist(err) {
-				http.NotFound(w, r)
-				return
-			}
 			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
-			log.Println(err)
+			log.Error("open file", slog.String("path", path), slog.String("err", err.Error()))
 			return
 		}
 
+		defer file.Close()
 		http.ServeContent(w, r, filepath.Base(path), info.ModTime(), file)
 	})
 }

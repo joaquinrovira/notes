@@ -5,6 +5,7 @@ import (
 	"os"
 
 	"github.com/go-git/go-billy/v5"
+	"github.com/joaquinrovira/notes/internal/store/fsutil"
 )
 
 func New(name string) (Filesystem, error) {
@@ -24,18 +25,10 @@ func (fs Filesystem) OpenFile(filename string, flag int, perm os.FileMode) (bill
 	if err != nil {
 		return nil, err
 	}
-	return &lockable{File: f}, err
-}
 
-// Naive implementation Lock and Unlock of [billy.File] for [*os.File].
-// Just have to satisfy the interface. We're not really using locks.
-type lockable struct {
-	*os.File
-}
-
-func (f *lockable) Lock() error {
-	return nil
-}
-func (f *lockable) Unlock() error {
-	return nil
+	type file struct {
+		*os.File
+		fsutil.Locker
+	}
+	return &file{File: f}, err
 }

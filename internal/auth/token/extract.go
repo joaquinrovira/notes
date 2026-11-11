@@ -1,8 +1,6 @@
 package token
 
 import (
-	"encoding/json/v2"
-	"log"
 	"net/http"
 )
 
@@ -29,8 +27,6 @@ func WithToken(t *Cypher, fn func(w http.ResponseWriter, r *http.Request, t Toke
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
-		p, _ := json.Marshal(payload)
-		log.Println(string(p))
 		fn(w, r, payload)
 	})
 }

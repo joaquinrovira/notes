@@ -1,69 +1,91 @@
 package main
 
 import (
-	"context"
 	"log/slog"
 	"net/http"
+	"strings"
 	"time"
 
-	chimiddleware "github.com/go-chi/chi/v5/middleware"
+	"github.com/go-chi/chi/v5/middleware"
 	"github.com/joaquinrovira/notes/internal/auth"
 	"github.com/joaquinrovira/notes/internal/auth/admin"
 	"github.com/joaquinrovira/notes/internal/auth/token"
-	"github.com/joaquinrovira/notes/internal/content"
+	"github.com/joaquinrovira/notes/internal/config"
 	"github.com/joaquinrovira/notes/internal/countdown"
-	"github.com/joaquinrovira/notes/internal/middleware"
+	"github.com/joaquinrovira/notes/internal/httputil"
+	"github.com/joaquinrovira/notes/internal/store"
 )
 
-func Routes(
-	ctx context.Context,
+func routes(
 	log *slog.Logger,
+	cfg config.Config,
 	mux *http.ServeMux,
-	c content.Content,
-	t *token.Cypher,
-	basicAuth middleware.Middleware,
-	production bool,
+	content store.Content,
+	cypher *token.Cypher,
 ) {
-	middlewares := []middleware.Middleware{
-		chimiddleware.Recoverer,
-		chimiddleware.ThrottleWithOpts(chimiddleware.ThrottleOpts{
+	middlewares := []httputil.Middleware{
+		middleware.Recoverer,
+		middleware.ThrottleWithOpts(middleware.ThrottleOpts{
 			Limit:          10,
-			RetryAfterFn:   func(ctxDone bool) time.Duration { return 5 * time.Second },
+			RetryAfterFn:   func(done bool) time.Duration { return 5 * time.Second },
 			BacklogLimit:   100,
 			BacklogTimeout: 5 * time.Second,
 		}),
 	}
 
-	login := auth.Login(log, t, production)
-	mux.Handle("/auth/login", middleware.Apply(login, middlewares...))
+	production := strings.ToLower(config.OrZero(cfg, "ENV")) == "production"
+	if !production {
+		log.Warn("running in development mode")
+	}
+	login := auth.Login(log, cypher, production)
+	mux.Handle("/auth/login", httputil.With(login, middlewares...))
+
+	if !production {
+		mux.Handle("/test/countdown", httputil.With((countdown.TestHandler(log, content.Static()))))
+	}
 
 	middlewares = append(
 		middlewares,
-		chimiddleware.Logger,
+		middleware.Logger,
 	)
 
-	staticfs := middleware.Apply(content.Handler(c.Static()), middlewares...)
+	staticfs := httputil.With(store.Handler(log, content.Static()), middlewares...)
 	mux.Handle("/~/", http.StripPrefix("/~/", staticfs))
 	mux.Handle("/favicon.ico", staticfs)
 
 	// Admin pages with basic auth
 	func() {
+		username := config.OrZero(cfg, "USERNAME")
+		if username == "" {
+			log.Warn("using default admin username")
+			username = "admin"
+		}
+
+		password := config.OrZero(cfg, "PASSWORD")
+		if password == "" {
+			log.Warn("using default admin password")
+			password = "admin"
+		}
+
 		middlewares := append(
 			middlewares,
-			chimiddleware.Throttle(4), // Stricter throttling for admin API
-			basicAuth,
+			middleware.Throttle(4), // Stricter throttling for admin API
+			middleware.BasicAuth(
+				"Administration",
+				map[string]string{username: password},
+			),
 		)
-		mux.Handle("GET /auth/token", middleware.Apply(admin.Get(), middlewares...))
-		mux.Handle("POST /auth/token", middleware.Apply(admin.Post(t), middlewares...))
+		mux.Handle("GET /auth/token", httputil.With(admin.Get(), middlewares...))
+		mux.Handle("POST /auth/token", httputil.With(admin.Post(log, cypher), middlewares...))
 	}()
 
 	// Content pages with token auth
 	func() {
 		middlewares := append(
 			middlewares,
-			auth.Middleware(t),
-			countdown.New(t, c.Data()),
+			auth.Middleware(log, cypher),
+			countdown.New(log, cypher, content.Data()),
 		)
-		mux.Handle("/", middleware.Apply(content.Handler(c.Data()), middlewares...))
+		mux.Handle("/", httputil.With(store.Handler(log, content.Data()), middlewares...))
 	}()
 }

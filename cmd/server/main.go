@@ -2,103 +2,165 @@ package main
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log/slog"
 	"net/http"
 	"os"
 	"os/signal"
-	"path"
 	"strings"
+	"sync"
+	"time"
 
-	chimiddleware "github.com/go-chi/chi/v5/middleware"
 	"github.com/joaquinrovira/notes/internal/auth/token"
 	"github.com/joaquinrovira/notes/internal/config"
-	"github.com/joaquinrovira/notes/internal/content"
+	"github.com/joaquinrovira/notes/internal/store"
+	"github.com/joaquinrovira/notes/internal/store/builtin"
+	"github.com/joaquinrovira/notes/internal/store/union"
 )
 
 func main() {
-	ctx := context.Background()
-	ctx, _ = signal.NotifyContext(ctx, os.Interrupt, os.Kill)
-
-	logger := func() *slog.Logger {
-		switch strings.ToLower(config.OrDefault("LOG_FORMAT", "text")) {
-		default:
-			fallthrough
-		case "text":
-			return slog.New(slog.NewTextHandler(os.Stderr, nil))
-		case "json":
-			return slog.New(slog.NewJSONHandler(os.Stderr, nil))
-		}
-	}()
-
-	err := run(ctx, logger)
-	if err != nil {
-		logger.Error(err.Error())
+	if err := run(); err != nil {
+		fmt.Fprint(os.Stderr, err.Error())
+		os.Exit(1)
 	}
 }
+func run() error {
+	wg := &sync.WaitGroup{}
+	defer wg.Wait()
 
-func run(ctx context.Context, log *slog.Logger) error {
-	production := strings.ToLower(os.Getenv("ENV")) == "production"
-	if !production {
-		log.Warn("Running in development mode.")
-	}
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	ctx, _ = signal.NotifyContext(ctx, os.Interrupt, os.Kill)
 
-	port := os.Getenv("PORT")
-	if port == "" {
-		port = "8080"
-	}
-
-	username := os.Getenv("USERNAME")
-	if username == "" {
-		log.Warn("Using default admin username.")
-		username = "admin"
-	}
-
-	password := os.Getenv("PASSWORD")
-	if password == "" {
-		log.Warn("Using default admin password.")
-		password = "admin"
-	}
-
-	key, err := config.Require("ENCRYPTION_KEY")
+	cfg, err := config.New()
 	if err != nil {
-		log.Error(err.Error())
-		log.Warn("Using default dev key. Do not use in production.")
-		key = "12345678901234567890123456789012"
+		return fmt.Errorf("loading configuration: %w", err)
 	}
 
-	t, err := token.New(key)
+	log := logger(cfg)
+
+	cypher, err := cypher(log, cfg)
 	if err != nil {
 		return fmt.Errorf("token service: %v", err)
 	}
 
-	content, err := func() (content.Content, error) {
-		switch strings.ToLower(os.Getenv("STORE")) {
-		default:
-			fallthrough
-		case "git", "":
-			return content.FromGit(ctx, log)
-		case "fs":
-			return content.FromFS()
-		}
-	}()
+	content, err := content(ctx, log, cfg, wg)
 	if err != nil {
 		return fmt.Errorf("content provider: %w", err)
 	}
 
+	listen := api(ctx, log, cfg, cypher, content)
+	return listen()
+}
+
+func logger(cfg config.Config) *slog.Logger {
+	raw := config.OrDefault(cfg, "LOG_LEVEL", slog.LevelDebug.String())
+	leveler := new(slog.Level)
+	err := leveler.UnmarshalText([]byte(raw))
+	if err != nil {
+		leveler = new(slog.LevelDebug)
+	}
+	opts := &slog.HandlerOptions{Level: leveler}
+
+	switch strings.ToLower(config.OrDefault(cfg, "LOG_FORMAT", "text")) {
+	default:
+		fallthrough
+	case "text":
+		return slog.New(slog.NewTextHandler(os.Stderr, opts))
+	case "json":
+		return slog.New(slog.NewJSONHandler(os.Stderr, opts))
+	}
+}
+
+func cypher(
+	log *slog.Logger,
+	cfg config.Config,
+) (*token.Cypher, error) {
+	key, err := config.Require(cfg, "ENCRYPTION_KEY")
+	if err != nil {
+		log.Error(err.Error())
+		log.Warn("using default dev key - do not use in production")
+		key = "12345678901234567890123456789012"
+	}
+	return token.NewCypher(key)
+}
+
+func content(
+	ctx context.Context,
+	log *slog.Logger,
+	cfg config.Config,
+	wg *sync.WaitGroup,
+) (store.Content, error) {
+	log = log.With("service", "storage")
+
+	content, err := func() (store.Content, error) {
+		switch strings.ToLower(os.Getenv("STORE")) {
+		default:
+			fallthrough
+		case "git", "":
+			log = log.With("backend", "git")
+			log.Info("sourcing content from git store")
+			return store.FromGit(ctx, log, cfg, wg)
+		case "fs":
+			log.Info("sourcing content from filesystem")
+			return store.FromFS(cfg)
+		}
+	}()
+	if err != nil {
+		return nil, err
+	}
+	return store.NewContent(
+		content.Data(),
+		union.New(&builtin.Filesystem{}, content.Static()),
+	), nil
+
+}
+
+func api(
+	ctx context.Context,
+	log *slog.Logger,
+	cfg config.Config,
+	cypher *token.Cypher,
+	content store.Content,
+) func() error {
 	mux := http.NewServeMux()
-	Routes(
-		ctx,
-		log,
-		mux,
-		content,
-		t,
-		chimiddleware.BasicAuth("local", map[string]string{username: password}),
-		production,
+	routes(log, cfg, mux, content, cypher)
+
+	socket := config.OrDefault(
+		cfg,
+		"SOCKET",
+		fmt.Sprintf(
+			"%s:%s",
+			config.OrDefault(cfg, "LISTEN_ADDRESS", "0.0.0.0"),
+			config.OrDefault(cfg, "LISTEN_PORT", "8080"),
+		),
 	)
 
-	socket := "0.0.0.0:" + port
-	log.Info("Starting", slog.String("Socket", socket))
-	log.Info("Admin interface available", slog.String("URL", path.Join("localhost:"+port, "/auth/token")))
-	return http.ListenAndServe(socket, mux)
+	return func() error {
+		log := log.With(slog.String("service", "http"))
+		var err error
+
+		wg := &sync.WaitGroup{}
+		srv := &http.Server{Addr: socket, Handler: mux}
+		wg.Go(func() {
+			<-ctx.Done()
+			ctx, cancel := context.WithDeadline(
+				context.Background(),
+				time.Now().Add(15*time.Second),
+			)
+			defer cancel()
+
+			localerr := srv.Shutdown(ctx)
+			if errors.Is(localerr, http.ErrServerClosed) {
+				return
+			}
+			err = localerr
+		})
+
+		log.Info("listening on socket", slog.String("socket", socket))
+		err = srv.ListenAndServe()
+		wg.Wait()
+		return err
+	}
 }

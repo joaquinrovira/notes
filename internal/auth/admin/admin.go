@@ -3,7 +3,7 @@ package admin
 import (
 	_ "embed"
 	"fmt"
-	"log"
+	"log/slog"
 	"net/http"
 	"path/filepath"
 	"strings"
@@ -11,24 +11,34 @@ import (
 	"time"
 
 	"github.com/joaquinrovira/notes/internal/auth/token"
+	"github.com/joaquinrovira/notes/internal/httputil"
 )
 
 //go:embed admin.get.html
-var GetAdminPage string
+var GetTokenGen string
 
 //go:embed admin.post.html.tmpl
-var PostAdminPage string
+var PostTokenGen string
 
 func Get() http.HandlerFunc {
-	data := []byte(GetAdminPage)
+	data := []byte(GetTokenGen)
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "text/html")
 		w.Write(data)
 	}
 }
 
-func Post(t *token.Cypher) http.HandlerFunc {
-	tmpl, err := template.New("token-gen").Parse(PostAdminPage)
+func Post(log *slog.Logger, t *token.Cypher) http.HandlerFunc {
+	log = log.With(slog.String("endpoint", "admin-post"))
+
+	logFormErr := func(field string, err error) http.Handler {
+		return httputil.Status(
+			http.StatusBadRequest,
+			fmt.Sprintf("form error: field %s: %s", field, err.Error()),
+		)
+	}
+
+	tmpl, err := template.New("token-gen").Parse(PostTokenGen)
 	if err != nil {
 		panic(err)
 	}
@@ -50,7 +60,7 @@ func Post(t *token.Cypher) http.HandlerFunc {
 		if nbfRaw != "" {
 			t, err := time.Parse("2006-01-02T15:04", nbfRaw)
 			if err != nil {
-				log.Println(err)
+				logFormErr("nbf", err).ServeHTTP(w, r)
 				return
 			}
 			nbf = &t
@@ -61,7 +71,7 @@ func Post(t *token.Cypher) http.HandlerFunc {
 		if nafRaw != "" {
 			t, err := time.Parse("2006-01-02T15:04", nafRaw)
 			if err != nil {
-				log.Println(err)
+				logFormErr("naf", err).ServeHTTP(w, r)
 				return
 			}
 			naf = &t
@@ -72,7 +82,7 @@ func Post(t *token.Cypher) http.HandlerFunc {
 		if expRaw != "" {
 			t, err := time.Parse("2006-01-02T15:04", expRaw)
 			if err != nil {
-				log.Println(err)
+				logFormErr("exp", err).ServeHTTP(w, r)
 				return
 			}
 			exp = &t
@@ -82,7 +92,7 @@ func Post(t *token.Cypher) http.HandlerFunc {
 		indexRaw = strings.TrimSpace(indexRaw)
 		index := filepath.Clean(indexRaw)
 		if index == "" {
-			http.Error(w, "Index path is required", http.StatusBadRequest)
+			logFormErr("index", fmt.Errorf("Index path is required")).ServeHTTP(w, r)
 			return
 		}
 
@@ -95,21 +105,16 @@ func Post(t *token.Cypher) http.HandlerFunc {
 
 		tokenStr, err := t.Encrypt(payload)
 		if err != nil {
-			http.Error(w, "Encryption failed: "+err.Error(), http.StatusInternalServerError)
-			return
+			panic(fmt.Errorf("encryption failed: %w", err))
 		}
 
 		fullLink := fmt.Sprintf("/auth/login?token=%s", tokenStr)
-
+		type PostAdminData struct{ Link string }
 		w.Header().Set("Content-Type", "text/html")
 		w.WriteHeader(http.StatusOK)
-
-		type PostAdminData struct {
-			Link string
-		}
 		err = tmpl.Execute(w, PostAdminData{Link: fullLink})
 		if err != nil {
-			w.WriteHeader(http.StatusInternalServerError)
+			panic(err)
 		}
 	}
 }

@@ -1,4 +1,4 @@
-package middleware
+package httputil
 
 import (
 	"net/http"
@@ -7,7 +7,7 @@ import (
 
 type Middleware = func(next http.Handler) http.Handler
 
-func Apply(handler http.Handler, middlewares ...Middleware) http.Handler {
+func With(handler http.Handler, middlewares ...Middleware) http.Handler {
 	slices.Reverse(middlewares)
 	for _, middleware := range middlewares {
 		handler = middleware(handler)
