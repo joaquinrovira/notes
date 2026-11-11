@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Admin - Generate Link</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        :root {
+            color: #292827;
+            background-color: #e6e2db;
+            button,input {
+                background-color: #292827;
+            }
+        }
+
+        @media (prefers-color-scheme: dark) {
+            :root {
+                color: #e6e2db;
+                background-color: #292827;
+                button,input {
+                    background-color: #e6e2db;
+                }
+            }
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            padding: 0;
+            margin: 0;
+        }
+
+        form {
+            display: flex;
+            flex-direction: column;
+            padding: 20px;
+        }
+
+        label {
+            font-weight: bold;
+        }
+
+        input[type="text"],
+        input[type="datetime-local"] {
+            padding: 0.5rem;
+            border: 1px solid;
+            border-radius: 4px;
+        }
+
+        label+input {
+            margin-top: 0.6rem;
+            margin-bottom: 1.2rem;
+        }
+
+        .reminder {
+            font-weight: normal;
+            font-size: 0.8rem;
+            margin-left: 5px;
+        }
+
+        button {
+            padding: 10px 15px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        h1 {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>Generate Magic Link</h1>
+    <form method="POST">
+        <label>Home Site:</label>
+        <input type="text" name="index" placeholder="/some/post">
+
+        <label>Allowed Paths:<span class="reminder">(optional, path prefix, comma separated)</span></label>
+        <input type="text" name="paths" placeholder="/some/path/*">
+
+        <label>Not Before:<span class="reminder">(optional)</span></label>
+        <input type="datetime-local" name="nbf">
+
+        <label>Expires:<span class="reminder">(optional)</span></label>
+        <input type="datetime-local" name="naf">
+
+        <label>Logout:<span class="reminder">(optional)</span></label>
+        <input type="datetime-local" name="exp">
+
+        <button type="submit">Generate Link</button>
+    </form>
+</body>
+
+</html>

@@ -1,13 +1,27 @@
 package token
 
 import (
-	"encoding/json"
+	"encoding/json/v2"
 	"fmt"
 )
 
 type Token interface {
-	payload()
+	token()
 }
+
+var _ Token = (*tokenBase)(nil)
+
+type tokenBase struct {
+	Version tokenVersion `json:"v"`
+}
+
+func (*tokenBase) token() {}
+
+type tokenVersion string
+
+const (
+	tokenVersionV1 tokenVersion = "1"
+)
 
 func UnmarshalToken(data []byte) (Token, error) {
 	var base tokenBase
@@ -18,24 +32,9 @@ func UnmarshalToken(data []byte) (Token, error) {
 
 	switch base.Version {
 	case tokenVersionV1:
-		t := &TokenV1{}
+		t := NewTokenV1()
 		return t, json.Unmarshal(data, t)
 	}
 
 	return nil, fmt.Errorf("invalid token: unknown version \"%s\"", base.Version)
 }
-
-type tokenVersion string
-
-const (
-	tokenVersionAdmin tokenVersion = "0"
-	tokenVersionV1    tokenVersion = "1"
-)
-
-var _ Token = (*tokenBase)(nil)
-
-type tokenBase struct {
-	Version tokenVersion `json:"v"`
-}
-
-func (*tokenBase) payload() {}

@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Countdown</title>
+    <style>
+        :root {
+            background: #e6e2db;
+            color: #292827;
+        }
+
+        @media (prefers-color-scheme: dark) {
+            :root {
+                color: #e6e2db;
+                background: #292827;
+            }
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            height: 100vh;
+            width: 100vw;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        #page-countdown {
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            height: 100%;
+        }
+
+        .countdown-title {
+            font-size: 1.2rem;
+            letter-spacing: 0.3em;
+            text-transform: uppercase;
+            margin-bottom: 2rem;
+            border-bottom: 1px solid;
+            padding-bottom: 10px;
+            display: inline-block;
+        }
+
+        .timer-container {
+            display: flex;
+            gap: 2rem;
+        }
+
+        .time-block {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-width: 5em;
+            margin-bottom: 2em;
+        }
+
+        .time-number {
+            font-size: 5rem;
+            line-height: 1;
+            font-weight: 400;
+            text-shadow: 0 0 20px rgba(212, 175, 55, 0.15);
+        }
+
+        .time-label {
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 0.2em;
+            margin-top: 1rem;
+        }
+
+        .separator {
+            font-size: 4rem;
+            opacity: 0.5;
+            margin-top: -10px;
+        }
+
+        .countdown-footer {
+            margin-top: 4rem;
+            font-style: italic;
+            font-size: 1.1rem;
+        }
+
+        /* --- MEDIA QUERIES --- */
+        @media (max-width: 768px) {
+            .timer-container {
+                gap: 1rem;
+            }
+
+            .time-number {
+                font-size: 3rem;
+            }
+
+            .separator {
+                font-size: 2.5rem;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <section id="page-countdown">
+        <span class="countdown-title">Available In</span>
+        <div class="time-block" style="display:none;">
+            <span class="time-number" id="days">00</span>
+            <span class="time-label">Days</span>
+        </div>
+
+        <div class="timer-container">
+            <div class="time-block">
+                <span class="time-number" id="hours">04</span>
+                <span class="time-label">Hours</span>
+            </div>
+            <div class="separator">:</div>
+            <div class="time-block">
+                <span class="time-number" id="minutes">12</span>
+                <span class="time-label">Minutes</span>
+            </div>
+            <div class="separator">:</div>
+            <div class="time-block">
+                <span class="time-number" id="seconds">45</span>
+                <span class="time-label">Seconds</span>
+            </div>
+        </div>
+    </section>
+
+    <script>
+        const until = parseInt("{{ .UnixSeconds }}", 10);
+
+        const h = document.getElementById('hours');
+        const m = document.getElementById('minutes');
+        const s = document.getElementById('seconds');
+        const d = document.getElementById('days');
+        function update() {
+            const now = Math.floor(Date.now() / 1000);
+            const diff = until - now;
+
+            if (diff <= 0) {
+                window.location.href = "{{ .Location }}";
+                return;
+            }
+
+            const days = Math.floor(diff / (3600 * 24));
+            const hours = Math.floor(diff / 3600) % 24;
+            const minutes = Math.floor((diff % 3600) / 60);
+            const seconds = diff % 60;
+
+            const opts = { minimumIntegerDigits: 2 }
+            const fmt = (n) => n.toLocaleString("en-US", opts)
+
+            h.innerText = fmt(hours);
+            m.innerText = fmt(minutes);
+            s.innerText = fmt(seconds);
+
+            if (days > 0) {
+                d.parentNode.style.display = 'flex';
+                d.innerText = days;
+            } else {
+                d.parentNode.style.display = 'none';
+            }
+        }
+
+        update();
+        setInterval(update, 500);
+    </script>
+</body>
+
+</html>

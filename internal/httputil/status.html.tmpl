@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>{{ .Status }} | {{ .StatusText }}</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        :root {
+            background: #e6e2db;
+            color: #292827;
+        }
+
+        @media (prefers-color-scheme: dark) {
+            :root {
+                color: #e6e2db;
+                background: #292827;
+            }
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            padding: 0;
+            margin: 0;
+        }
+
+        h1 {
+            font-size: 6rem;
+            margin: 0;
+        }
+
+        h2 {
+            font-size: 2rem;
+            margin: 0;
+        }
+
+        hr {
+            width: 50%;
+            border: 1px solid;
+            margin: 1.5rem 0;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>{{ .Status }}</h1>
+    <h2>{{ .StatusText }}</h1>
+    {{ if ne .Message "" }}
+        <hr>
+        <p style="text-align: center; font-size: 1.2rem; margin: 0 0.5rem;">
+            {{ .Message }}
+        </p>
+    {{ end }}
+</body>
+
+</html>
