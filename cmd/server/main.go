@@ -15,8 +15,6 @@ import (
 	"github.com/joaquinrovira/notes/internal/auth/token"
 	"github.com/joaquinrovira/notes/internal/config"
 	"github.com/joaquinrovira/notes/internal/store"
-	"github.com/joaquinrovira/notes/internal/store/builtin"
-	"github.com/joaquinrovira/notes/internal/store/union"
 )
 
 func main() {
@@ -93,28 +91,17 @@ func content(
 	wg *sync.WaitGroup,
 ) (store.Content, error) {
 	log = log.With("service", "storage")
-
-	content, err := func() (store.Content, error) {
-		switch strings.ToLower(os.Getenv("STORE")) {
-		default:
-			fallthrough
-		case "git", "":
-			log = log.With("backend", "git")
-			log.Info("sourcing content from git store")
-			return store.FromGit(ctx, log, cfg, wg)
-		case "fs":
-			log.Info("sourcing content from filesystem")
-			return store.FromFS(cfg)
-		}
-	}()
-	if err != nil {
-		return nil, err
+	switch strings.ToLower(os.Getenv("STORE")) {
+	default:
+		fallthrough
+	case "git", "":
+		log = log.With("backend", "git")
+		log.Info("sourcing content from git store")
+		return store.FromGit(ctx, log, cfg, wg)
+	case "fs":
+		log.Info("sourcing content from filesystem")
+		return store.FromFS(cfg)
 	}
-	return store.NewContent(
-		content.Data(),
-		union.New(&builtin.Filesystem{}, content.Static()),
-	), nil
-
 }
 
 func api(

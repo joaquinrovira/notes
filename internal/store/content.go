@@ -12,7 +12,6 @@ import (
 
 	"github.com/go-git/go-billy/v5"
 	"github.com/joaquinrovira/notes/internal/config"
-	_ "github.com/joaquinrovira/notes/internal/store/builtin"
 	"github.com/joaquinrovira/notes/internal/store/filesystem"
 	"github.com/joaquinrovira/notes/internal/store/git"
 )
