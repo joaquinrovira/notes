@@ -23,6 +23,7 @@ type Content interface {
 
 type Filesystem interface {
 	OpenFile(filename string, flag int, perm os.FileMode) (billy.File, error)
+	ReadDir(path string) ([]os.FileInfo, error)
 	Stat(filename string) (os.FileInfo, error)
 }
 
@@ -97,6 +98,9 @@ func prefixed(s string, fs Filesystem) Filesystem {
 		stat: func(filename string) (os.FileInfo, error) {
 			return fs.Stat(path.Join(s, filename))
 		},
+		readDir: func(dir string) ([]os.FileInfo, error) {
+			return fs.ReadDir(path.Join(s, dir))
+		},
 	}
 }
 
@@ -112,4 +116,8 @@ func (f filesystemfn) OpenFile(filename string, flag int, perm os.FileMode) (bil
 
 func (f filesystemfn) Stat(filename string) (os.FileInfo, error) {
 	return f.stat(filename)
+}
+
+func (f filesystemfn) ReadDir(path string) ([]os.FileInfo, error) {
+	return f.readDir(path)
 }

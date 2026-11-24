@@ -54,6 +54,9 @@ func Post(log *slog.Logger, t *token.Cypher) http.HandlerFunc {
 				paths[i] = strings.TrimSpace(path)
 			}
 		}
+		if len(paths) == 0 {
+			paths = []string{"/"}
+		}
 
 		var nbf *time.Time
 		nbfRaw := r.FormValue("nbf")

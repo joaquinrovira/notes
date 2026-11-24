@@ -2,12 +2,8 @@ package countdown
 
 import (
 	_ "embed"
-	"fmt"
-	"io"
 	"log/slog"
 	"net/http"
-	"os"
-	"path"
 	"text/template"
 	"time"
 
@@ -16,8 +12,8 @@ import (
 	"github.com/joaquinrovira/notes/internal/store"
 )
 
-func New(log *slog.Logger, t *token.Cypher, fs store.Filesystem) httputil.Middleware {
-	countdown := Handler(log, t, fs)
+func Middleware(log *slog.Logger, t *token.Cypher, content store.Content) httputil.Middleware {
+	countdown := Handler(log, t, content)
 	return func(next http.Handler) http.Handler {
 		return token.WithToken(t, func(w http.ResponseWriter, r *http.Request, t token.Token) {
 			switch token := t.(type) {
@@ -32,37 +28,7 @@ func New(log *slog.Logger, t *token.Cypher, fs store.Filesystem) httputil.Middle
 	}
 }
 
-//go:embed countdown.html.tmpl
-var CountdownPage string
-
-func Handler(log *slog.Logger, t *token.Cypher, fs store.Filesystem) http.HandlerFunc {
-	tmpl, err := template.New("countdown").Parse(CountdownPage)
-	if err != nil {
-		panic(err)
-	}
-	return func(w http.ResponseWriter, r *http.Request) {
-		payload, ok := token.Extract(t, r)
-		if !ok {
-			w.WriteHeader(http.StatusBadRequest)
-			return
-		}
-
-		switch token := payload.(type) {
-		case *token.TokenV1:
-			h, err := customCountdown(token, fs)
-			if err != nil {
-				log.Error("custom countdown failure", slog.String("err", err.Error()))
-				countdownToken(*token, tmpl, w)
-				return
-			}
-			h.ServeHTTP(w, r)
-		default:
-			w.WriteHeader(http.StatusInternalServerError)
-		}
-	}
-}
-
-func countdownToken(token token.TokenV1, tmpl *template.Template, w http.ResponseWriter) {
+func RenderCountdown(token token.TokenV1, tmpl *template.Template, w http.ResponseWriter) {
 	var countdown int64
 	if token.NotBefore != nil {
 		countdown = token.NotBefore.Unix()
@@ -70,67 +36,29 @@ func countdownToken(token token.TokenV1, tmpl *template.Template, w http.Respons
 
 	w.Header().Set("Content-Type", "text/html")
 	w.WriteHeader(http.StatusOK)
-	type CountdownData struct {
+	type Data struct {
 		Location    string
 		UnixSeconds int64
 	}
-	err := tmpl.Execute(w, CountdownData{Location: token.Home, UnixSeconds: countdown})
+	err := tmpl.Execute(w, Data{Location: token.Home, UnixSeconds: countdown})
 	if err != nil {
 		panic(err)
 	}
 }
 
-func customCountdown(token *token.TokenV1, fs store.Filesystem) (h http.Handler, err error) {
-	location := path.Join(".", token.Home)
-	if location == "" {
-		return nil, fmt.Errorf("undefined home parameter")
+//go:embed countdown.html.tmpl
+var CountdownPage string
+
+func Default(fs store.Filesystem) (t *template.Template) {
+	t, err := CountdownInDir(fs, ".")
+	if err == nil {
+		return t
 	}
 
-	stat, err := fs.Stat(location)
+	t, err = template.New("countdown").Parse(CountdownPage)
 	if err != nil {
-		return nil, fmt.Errorf("could not stat '%s': %w", location, err)
-	}
-	if !stat.IsDir() {
-		return nil, fmt.Errorf("not a directory '%s'", location)
+		panic(err)
 	}
 
-	location = path.Join(location, "countdown.html")
-	stat, err = fs.Stat(location)
-	if err != nil {
-		return nil, fmt.Errorf("could not stat '%s': %w", location, err)
-	}
-
-	file, err := fs.OpenFile(location, os.O_RDONLY, os.ModePerm)
-	if err != nil {
-		return nil, fmt.Errorf("opening '%s': %w", location, err)
-	}
-	defer file.Close()
-
-	data, err := io.ReadAll(file)
-	if err != nil {
-		return nil, fmt.Errorf("reading '%s': %w", location, err)
-	}
-
-	tmpl, err := template.New("countdown-" + location).Parse(string(data))
-	if err != nil {
-		return nil, fmt.Errorf("reading '%s': invalid template: %w", location, err)
-	}
-
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		var countdown int64
-		if token.NotBefore != nil {
-			countdown = token.NotBefore.Unix()
-		}
-
-		w.Header().Set("Content-Type", "text/html")
-		w.WriteHeader(http.StatusOK)
-		type CountdownData struct {
-			Location    string
-			UnixSeconds int64
-		}
-		err := tmpl.Execute(w, CountdownData{Location: token.Home, UnixSeconds: countdown})
-		if err != nil {
-			panic(err)
-		}
-	}), nil
+	return t
 }

@@ -84,7 +84,7 @@ func routes(
 		middlewares := append(
 			middlewares,
 			auth.Middleware(log, cypher),
-			countdown.New(log, cypher, content.Data()),
+			countdown.Middleware(log, cypher, content),
 		)
 		mux.Handle("/", httputil.With(store.Handler(log, content.Data()), middlewares...))
 	}()

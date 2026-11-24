@@ -32,110 +32,16 @@
             flex-direction: column;
             align-items: center;
             justify-content: center;
-        }
-
-        #page-countdown {
-            text-align: center;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            width: 100%;
-            height: 100%;
-        }
-
-        .countdown-title {
-            font-size: 1.2rem;
-            letter-spacing: 0.3em;
-            text-transform: uppercase;
-            margin-bottom: 2rem;
-            border-bottom: 1px solid;
-            padding-bottom: 10px;
-            display: inline-block;
-        }
-
-        .timer-container {
-            display: flex;
-            gap: 2rem;
-        }
-
-        .time-block {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            min-width: 5em;
-            margin-bottom: 2em;
-        }
-
-        .time-number {
-            font-size: 5rem;
-            line-height: 1;
-            font-weight: 400;
-            text-shadow: 0 0 20px rgba(212, 175, 55, 0.15);
-        }
-
-        .time-label {
-            font-size: 0.8rem;
-            text-transform: uppercase;
-            letter-spacing: 0.2em;
-            margin-top: 1rem;
-        }
-
-        .separator {
-            font-size: 4rem;
-            opacity: 0.5;
-            margin-top: -10px;
-        }
-
-        .countdown-footer {
-            margin-top: 4rem;
-            font-style: italic;
-            font-size: 1.1rem;
-        }
-
-        /* --- MEDIA QUERIES --- */
-        @media (max-width: 768px) {
-            .timer-container {
-                gap: 1rem;
-            }
-
-            .time-number {
-                font-size: 3rem;
-            }
-
-            .separator {
-                font-size: 2.5rem;
-            }
+            font-size: 8vw;
         }
     </style>
 </head>
 
 <body>
 
-    <section id="page-countdown">
-        <span class="countdown-title">Available In</span>
-        <div class="time-block" style="display:none;">
-            <span class="time-number" id="days">00</span>
-            <span class="time-label">Days</span>
-        </div>
-
-        <div class="timer-container">
-            <div class="time-block">
-                <span class="time-number" id="hours">04</span>
-                <span class="time-label">Hours</span>
-            </div>
-            <div class="separator">:</div>
-            <div class="time-block">
-                <span class="time-number" id="minutes">12</span>
-                <span class="time-label">Minutes</span>
-            </div>
-            <div class="separator">:</div>
-            <div class="time-block">
-                <span class="time-number" id="seconds">45</span>
-                <span class="time-label">Seconds</span>
-            </div>
-        </div>
-    </section>
+    <div>
+        <span><span id="days">00</span>:</span><span id="hours">01</span>:<span id="minutes">02</span>:<span id="seconds">03</span>
+    </div>
 
     <script>
         const until = parseInt("{{ .UnixSeconds }}", 10);
@@ -166,7 +72,7 @@
             s.innerText = fmt(seconds);
 
             if (days > 0) {
-                d.parentNode.style.display = 'flex';
+                d.parentNode.style.display = null;
                 d.innerText = days;
             } else {
                 d.parentNode.style.display = 'none';

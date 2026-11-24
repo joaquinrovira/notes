@@ -32,3 +32,27 @@ func (fs Filesystem) OpenFile(filename string, flag int, perm os.FileMode) (bill
 	}
 	return &file{File: f}, err
 }
+
+func (fs Filesystem) ReadDir(path string) ([]os.FileInfo, error) {
+	f, err := fs.Root.OpenFile(path, os.O_RDONLY, os.ModePerm)
+	if err != nil {
+		return nil, err
+	}
+	defer f.Close()
+
+	entries, err := f.ReadDir(0)
+	if err != nil {
+		return nil, fmt.Errorf("file error: %w", err)
+	}
+
+	var infos []os.FileInfo
+	for _, entry := range entries {
+		info, err := entry.Info()
+		if err != nil {
+			return nil, fmt.Errorf("reading file info %q: %w", entry.Name(), err)
+		}
+		infos = append(infos, info)
+	}
+
+	return infos, nil
+}
