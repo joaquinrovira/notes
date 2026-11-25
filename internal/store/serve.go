@@ -6,15 +6,19 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+
+	httputil "github.com/joaquinrovira/notes/internal/util/http"
 )
 
-func Handler(log *slog.Logger, fs Filesystem) http.Handler {
+func Handler(log *slog.Logger, fs Filesystem, prefix string) http.Handler {
+	NotFound := httputil.Status(http.StatusNotFound, "")
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		path := r.URL.Path
 		if path == "" || path[0] != '/' {
 			path = "/" + path
 		}
 		path = filepath.Clean(path)
+		path = strings.TrimPrefix(path, prefix)
 
 		if filepath.Base(path) == "index.html" {
 			http.Redirect(w, r, filepath.Dir(path), http.StatusSeeOther)
@@ -35,7 +39,7 @@ func Handler(log *slog.Logger, fs Filesystem) http.Handler {
 		// Check if directory, if so, look for index.html
 		info, err := fs.Stat(path)
 		if err != nil {
-			http.NotFound(w, r)
+			NotFound(w, r)
 			return
 		}
 		if info.IsDir() {
@@ -44,13 +48,14 @@ func Handler(log *slog.Logger, fs Filesystem) http.Handler {
 				http.Redirect(w, r, r.URL.Path+"/", http.StatusSeeOther)
 				return
 			}
+
 			// Directories open index.html by default.
 			path = filepath.Join(path, "index.html")
 		}
 
 		file, err := fs.OpenFile(path, os.O_RDONLY, os.ModePerm)
 		if os.IsNotExist(err) {
-			http.NotFound(w, r)
+			NotFound(w, r)
 			return
 		}
 		if err != nil {

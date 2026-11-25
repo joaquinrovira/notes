@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/joaquinrovira/notes/internal/auth/token"
-	"github.com/joaquinrovira/notes/internal/httputil"
+	httputil "github.com/joaquinrovira/notes/internal/util/http"
 )
 
 func Login(log *slog.Logger, t *token.Cypher, secure bool) http.Handler {

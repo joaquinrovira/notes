@@ -19,9 +19,9 @@ func init() {
 	statustpl = tmpl
 }
 
-func Status(code int, message string) http.Handler {
+func Status(code int, message string) http.HandlerFunc {
 	status := http.StatusText(code)
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "text/html")
 		w.WriteHeader(code)
 		type data struct {
@@ -33,5 +33,5 @@ func Status(code int, message string) http.Handler {
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 		}
-	})
+	}
 }

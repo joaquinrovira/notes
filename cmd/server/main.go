@@ -111,8 +111,7 @@ func api(
 	cypher *token.Cypher,
 	content store.Content,
 ) func() error {
-	mux := http.NewServeMux()
-	routes(log, cfg, mux, content, cypher)
+	handler := routes(log, cfg, content, cypher)
 
 	socket := config.OrDefault(
 		cfg,
@@ -129,7 +128,7 @@ func api(
 		var err error
 
 		wg := &sync.WaitGroup{}
-		srv := &http.Server{Addr: socket, Handler: mux}
+		srv := &http.Server{Addr: socket, Handler: handler}
 		wg.Go(func() {
 			<-ctx.Done()
 			ctx, cancel := context.WithDeadline(

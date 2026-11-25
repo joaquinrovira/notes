@@ -11,7 +11,7 @@ import (
 	"time"
 
 	"github.com/joaquinrovira/notes/internal/auth/token"
-	"github.com/joaquinrovira/notes/internal/httputil"
+	httputil "github.com/joaquinrovira/notes/internal/util/http"
 )
 
 //go:embed link.get.html
