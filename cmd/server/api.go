@@ -8,7 +8,7 @@ import (
 
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/joaquinrovira/notes/internal/auth"
-	"github.com/joaquinrovira/notes/internal/auth/admin"
+	"github.com/joaquinrovira/notes/internal/auth/admin/link"
 	"github.com/joaquinrovira/notes/internal/auth/token"
 	"github.com/joaquinrovira/notes/internal/config"
 	"github.com/joaquinrovira/notes/internal/countdown"
@@ -38,7 +38,7 @@ func routes(
 		log.Warn("running in development mode")
 	}
 	login := auth.Login(log, cypher, production)
-	mux.Handle("/auth/login", httputil.With(login, middlewares...))
+	mux.Handle("/~/auth/login", httputil.With(login, middlewares...))
 
 	if !production {
 		mux.Handle("/test/countdown", httputil.With((countdown.TestHandler(log, content.Static()))))
@@ -48,10 +48,6 @@ func routes(
 		middlewares,
 		middleware.Logger,
 	)
-
-	staticfs := httputil.With(store.Handler(log, content.Static()), middlewares...)
-	mux.Handle("/~/", http.StripPrefix("/~/", staticfs))
-	mux.Handle("/favicon.ico", staticfs)
 
 	// Admin pages with basic auth
 	func() {
@@ -75,9 +71,13 @@ func routes(
 				map[string]string{username: password},
 			),
 		)
-		mux.Handle("GET /auth/token", httputil.With(admin.Get(), middlewares...))
-		mux.Handle("POST /auth/token", httputil.With(admin.Post(log, cypher), middlewares...))
+		mux.Handle("GET /~/admin/link", httputil.With(link.Get(), middlewares...))
+		mux.Handle("POST /~/admin/link", httputil.With(link.Post(log, cypher), middlewares...))
 	}()
+
+	staticfs := httputil.With(store.Handler(log, content.Static()), middlewares...)
+	mux.Handle("/~/", http.StripPrefix("/~/", staticfs))
+	mux.Handle("/favicon.ico", staticfs)
 
 	// Content pages with token auth
 	func() {

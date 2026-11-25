@@ -1,4 +1,4 @@
-package admin
+package link
 
 import (
 	_ "embed"
@@ -14,14 +14,14 @@ import (
 	"github.com/joaquinrovira/notes/internal/httputil"
 )
 
-//go:embed admin.get.html
-var GetTokenGen string
+//go:embed link.get.html
+var GetTemplate string
 
-//go:embed admin.post.html.tmpl
-var PostTokenGen string
+//go:embed link.post.html.tmpl
+var PostTemplate string
 
 func Get() http.HandlerFunc {
-	data := []byte(GetTokenGen)
+	data := []byte(GetTemplate)
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "text/html")
 		w.Write(data)
@@ -38,7 +38,7 @@ func Post(log *slog.Logger, t *token.Cypher) http.HandlerFunc {
 		)
 	}
 
-	tmpl, err := template.New("token-gen").Parse(PostTokenGen)
+	tmpl, err := template.New("token-gen").Parse(PostTemplate)
 	if err != nil {
 		panic(err)
 	}
