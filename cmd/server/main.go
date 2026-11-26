@@ -23,6 +23,7 @@ func main() {
 		os.Exit(1)
 	}
 }
+
 func run() error {
 	wg := &sync.WaitGroup{}
 	defer wg.Wait()

@@ -1,22 +1,20 @@
 package config
 
 import (
-	"fmt"
 	"os"
 
 	"github.com/joho/godotenv"
 )
 
 func New() (Config, error) {
-	var zero Config
+	var c Config
 	dotenv, err := godotenv.Read()
-	if err != nil {
-		return zero, fmt.Errorf("reading environment from disk: %w", err)
+	if err == nil {
+		c.dotenv = dotenv
+	} else {
+		c.dotenv = map[string]string{}
 	}
-
-	return Config{
-		dotenv: dotenv,
-	}, nil
+	return c, nil
 }
 
 type Config struct {
