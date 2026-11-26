@@ -111,7 +111,7 @@ func Post(log *slog.Logger, t *token.Cypher) http.HandlerFunc {
 			panic(fmt.Errorf("encryption failed: %w", err))
 		}
 
-		fullLink := fmt.Sprintf("/auth/login?token=%s", tokenStr)
+		fullLink := fmt.Sprintf("/~/auth/login?token=%s", tokenStr)
 		type PostAdminData struct{ Link string }
 		w.Header().Set("Content-Type", "text/html")
 		w.WriteHeader(http.StatusOK)
